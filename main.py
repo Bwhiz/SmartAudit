@@ -4,7 +4,7 @@ from src.utilities import initialize_milvus, extract_text_with_pypdf, emb_text, 
 print("Imported Packages...")
 
 def main():
-    st.markdown("<p style='text-align: center; font-weight: bold;'>SmartAudit</p>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; font-weight: bold;'>SmartAudit</h1>", unsafe_allow_html=True)
 
     # Initialize Milvus and load collection
     collection = initialize_milvus()
