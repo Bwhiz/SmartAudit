@@ -1,0 +1,9 @@
+.devcontainer/
+.github/
+notebooks/
+*.ipynb
+__pycache__
+.env
+secrets.toml
+README.md
+.gitignore
