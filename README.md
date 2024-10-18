@@ -1,4 +1,4 @@
-## Simple schematic Representation of the SmartAudit workflow
+<h1 align="center">Simple schematic Representation of the SmartAudit workflow</h1>
 
 ![Schematic](https://github.com/Bwhiz/SmartAudit/blob/main/assets/SmartAudit_schema.jpg)
 
