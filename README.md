@@ -1,5 +1,6 @@
-<h1 align="center">Simple schematic Representation of the SmartAudit workflow</h1>
+<h1 align="center">SmartAudit Solution</h1>
 
+## Simple schematic Representation of the SmartAudit workflow
 ![Schematic](https://github.com/Bwhiz/SmartAudit/blob/main/assets/SmartAudit_schema.jpg)
 
 
