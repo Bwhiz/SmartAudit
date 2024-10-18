@@ -1,6 +1,6 @@
 import streamlit as st
 from src.utilities import (initialize_milvus, extract_text_with_pypdf, emb_text, get_context, query_pdf_GPT,
-                           get_response_GPT, chunk_text, query_llm_with_chunk, summarize_response, stream_response)
+                           get_response_GPT, chunk_text, query_llm_with_chunk, summarize_response)
 
 print("Imported Packages...")
 
@@ -46,26 +46,35 @@ def main():
         with st.chat_message("user"):
             st.markdown(prompt)
 
+        # Placeholder for assistant response (to display it later)
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
-            full_response = ""
 
-        # Check if the PDF content exists
-        if len(st.session_state['pdf_embeddings']) != 0:
-            # Get the last PDF content for querying
-            pdf_content = st.session_state['pdf_embeddings'][-1]       
+        # Embed the user's query using OpenAI embeddings
+        #query_embedding = emb_text(prompt)
+
+        # Search the collection for relevant texts
+        #retrieved_texts = get_context(prompt, collection)
+
+        # all_responses = []
+        # for chunk in pdf_chunks:
+        #     #response = query_llm_with_chunk(chunk, retrieved_texts,prompt)
+        #     response = query_llm_with_chunk(chunk, prompt)
+        #     all_responses.append(response)
+        # # Generate a response using OpenAI's LLM, augmented with retrieved texts
+        if len((st.session_state['pdf_embeddings'])) != 0:
+            llm_response = query_pdf_GPT(st.session_state['pdf_embeddings'][-1], prompt)
         else:
-            pdf_content = ""
+            llm_response = query_pdf_GPT('', prompt)
+        # # Combine responses into a single string
+        # combined_responses  = " ".join(all_responses)
+        # coherent_response = summarize_response(combined_responses)
+        # Update the assistant's placeholder with the response
+        #message_placeholder.markdown(llm_response)
+        message_placeholder.markdown(llm_response)
 
-        response_generator = query_pdf_GPT(pdf_content, prompt)
-        
-        full_response = ""
-        for token in stream_response(response_generator):
-            full_response += token
-            message_placeholder.markdown(full_response)  # Update placeholder with new content
-
-        # Append the final LLM-generated response to chat history
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
+        # Append the LLM-generated response to chat history
+        st.session_state.messages.append({"role": "assistant", "content": llm_response})
 
 if __name__ == "__main__":
     main()

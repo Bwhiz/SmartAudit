@@ -6,6 +6,7 @@ import os
 from openai import OpenAI
 from pymilvus import MilvusClient
 import numpy as np
+import time
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
@@ -158,7 +159,21 @@ def query_pdf_GPT(pdf_content, question):
         {"role": "user", "content": USER_PROMPT},
     ],
     max_tokens=6000,
-    temperature=0.5
+    temperature=0.5,
+    stream=True
     )
 
-    return response.choices[0].message.content
+    return response
+
+    # return response.choices[0].message.content
+
+def stream_response(response):
+    output = ""
+    for message in response:
+        token = message.choices[0].delta.content
+        if token:
+            # print(token, end="")
+            output += token
+            yield f"""{token}"""
+            # Add a delay between chunks to reduce stream speed
+            time.sleep(0.05)  # Adjust the delay as needed
