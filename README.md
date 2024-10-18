@@ -30,7 +30,7 @@ Before running this project, ensure you have the following installed:
     ./install.sh
     ```
 ## Running the Script
-To execute the main.py script, follow these steps:
+To execute the `main.py` script, follow these steps:
 
 1. Direct Execution (after installing dependencies):
     ```bash
