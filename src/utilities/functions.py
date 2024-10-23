@@ -8,7 +8,9 @@ from pymilvus import MilvusClient
 import numpy as np
 import time
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-
+import faiss
+from tqdm.auto import tqdm
+import tiktoken
 
 
 load_dotenv()
@@ -41,7 +43,7 @@ def extract_text_with_pypdf(file):
 
 #function to chunk text :
 st.cache_data
-def chunk_text(text, chunk_size=1000, chunk_overlap=50):
+def chunk_text(text, chunk_size=5000, chunk_overlap=250):
     splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     return splitter.split_text(text)
 
@@ -53,6 +55,21 @@ def emb_text(text):
         .data[0]
         .embedding
     )
+st.cache_data
+def embed_chunks(chunks):
+    output = []
+    for chunk in tqdm(chunks, total=len(chunks)):
+        output.append(emb_text(chunk))
+    return output    
+
+st.cache_data
+def create_faiss_index(embeddings):
+    dim = 1536  
+    print(f"==== creating the Faiss embeddings =======")
+    index = faiss.IndexFlatL2(dim)  # Create a FAISS index with L2 distance metric
+    index.add(embeddings)  
+    return index
+
 
 st.cache_data
 def get_context(question, milvus_client, collection_name='demo_rag_collection'):
@@ -162,7 +179,7 @@ def query_pdf_GPT(pdf_content, question):
     temperature=0.5,
     stream=True
     )
-
+    
     return response
 
     # return response.choices[0].message.content
@@ -176,4 +193,15 @@ def stream_response(response):
             output += token
             yield f"""{token}"""
             # Add a delay between chunks to reduce stream speed
-            time.sleep(0.05)  # Adjust the delay as needed
+            time.sleep(0.05) 
+
+
+def calculate_token_usage(prompt, model="gpt-4o-mini"):
+    encoding = tiktoken.encoding_for_model(model)
+    prompt_tokens = encoding.encode(prompt)
+    return len(prompt_tokens)
+
+prompt = "Your prompt here"
+prompt_tokens = calculate_token_usage(prompt)
+
+# cost = (total_tokens / 1_000_000) * 3.00

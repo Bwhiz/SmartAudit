@@ -1,4 +1,5 @@
 __author__ = "Ejelonu Benedict"
 
 from .functions import (initialize_milvus, extract_text_with_pypdf, emb_text, 
-                        get_context, get_response_GPT, chunk_text, query_llm_with_chunk, summarize_response, query_pdf_GPT, stream_response)
+                        get_context, get_response_GPT, chunk_text, query_llm_with_chunk, 
+                        summarize_response, query_pdf_GPT, stream_response, embed_chunks, create_faiss_index, calculate_token_usage)
