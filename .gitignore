@@ -1,6 +1,11 @@
 .env
 
 prometheus-2.44.0.linux-amd64.tar.gz
+prometheus
+
+promtool
+
+prometheus-2.44.0.linux-amd64/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
