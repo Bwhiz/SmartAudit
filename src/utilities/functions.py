@@ -11,6 +11,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 import faiss
 from tqdm.auto import tqdm
 import tiktoken
+import concurrent.futures
+
 
 
 load_dotenv()
@@ -18,8 +20,16 @@ API_KEY=os.getenv('OPEN_API_KEY')
 zilli_api_key=os.getenv('zilliAPI_KEY')
 zilliuri = os.getenv('connectionUri')
 
-
 client = OpenAI(api_key=API_KEY)
+
+
+SYSTEM_PROMPT = """
+    Human: You are a Financial assistant called SmartAudit knowledgeable with the IFRS and GAAP standard for auditing reports.
+    You are able to find answers to the questions from the contextual passage snippets provided and you are free to browse the internet for additional information on the IFRS and GAAP standard to augment your response.
+    Try to always limit the conversation to be around financial topic related to auditing.
+    """
+
+
 
 st.cache_resource
 def initialize_milvus():
@@ -40,6 +50,7 @@ def extract_text_with_pypdf(file):
     for page in reader.pages:
         text += page.extract_text()
     return text
+
 
 #function to chunk text :
 st.cache_data
@@ -122,22 +133,6 @@ def get_response_GPT(retrieved_texts, question):
     return response.choices[0].message.content
 
 
-def query_llm_with_chunk(chunk, prompt):
-    system_prompt = "You are an Auditor and you have been presented with different pieces of information, you are very professional and pay attention to details"
-
-    #user_prompt = f"Relevant IFRS standards:\n{ifrs_chunks}\n\nPDF chunk:\n{chunk}\n\n{prompt}."
-    user_prompt = f"PDF chunk:\n{chunk}\n\n{prompt}."
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
-    ],
-        max_tokens=6000,
-        temperature=0.5 
-    )
-    return response.choices[0].message.content
-
 def summarize_response(combined_text):
     system_prompt = "You are an Auditor and you have been presented with different pieces of information, you are very professional and pay attention to details"
 
@@ -154,11 +149,13 @@ def summarize_response(combined_text):
 
     return response.choices[0].message.content
 
+
 def query_pdf_GPT(pdf_content, question):
 
     SYSTEM_PROMPT = """
-    Human: You are a Financial assistant called SmartAudit knowledgeable with the IFRS standard for auditing reports.
-    You are able to find answers to the questions from the contextual passage snippets provided and you are free to browse the internt for additional information on the IFRS standard to augment your response.
+    Human: You are a Financial assistant called SmartAudit knowledgeable with the IFRS and GAAP standard for auditing reports.
+    You are able to find answers to the questions from the contextual passage snippets provided and you are free to browse the internt for additional information on the IFRS and GAAP standard to augment your response.
+    Try to always limit the conversation to be around financial topic related to auditing.
     """
     USER_PROMPT = f"""
     Use the following pieces of information enclosed in <context> tags to provide an answer to the question enclosed in <question> tags.
@@ -201,7 +198,73 @@ def calculate_token_usage(prompt, model="gpt-4o-mini"):
     prompt_tokens = encoding.encode(prompt)
     return len(prompt_tokens)
 
-prompt = "Your prompt here"
-prompt_tokens = calculate_token_usage(prompt)
-
 # cost = (total_tokens / 1_000_000) * 3.00
+
+
+def extract_text_by_page(pdf_path):
+    """"
+    Function to run text extraction by pages:
+    
+    """
+    text_by_page = []
+    pdf_reader = PdfReader(pdf_path)
+    # Iterate through each page
+    for page_number in tqdm(range(len(pdf_reader.pages)), desc="Running Text Extraction"):
+        page = pdf_reader.pages[page_number]
+        page_text = page.extract_text()  
+        text_by_page.append(page_text)
+
+    return text_by_page
+
+def query_pdf_GPT_batch(pdf_content, question):
+    USER_PROMPT = f"""
+    Use the following pieces of information enclosed in <context> tags to provide an answer to the question enclosed in <question> tags.
+    <context>
+    {pdf_content}
+    </context>
+    <question>
+    {question}
+    </question>
+    """
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": USER_PROMPT},
+        ],
+        max_tokens=6000,
+        temperature=0.5,
+    )
+    return response.choices[0].message.content if response.choices else ""
+
+def get_responses_concurrently(pdf_pages, question):
+    responses = []
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        responses = list(executor.map(lambda page: query_pdf_GPT_batch(page, question), pdf_pages))
+    return responses
+
+
+def summarize_responses(responses, question):
+    combined_content = "\n".join(responses)
+    summary_prompt = f"""
+    Please provide a concise summary based on the following information extracted from multiple pages, focusing on key auditing-related insights relevant to IFRS and GAAP standards.
+    
+    <information>
+    {combined_content}
+    </information>
+    <question>
+    {question}
+    </question>
+    """
+    summary_response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": summary_prompt},
+        ],
+        max_tokens=6000,
+        temperature=0.5,
+        stream=True
+    )
+    
+    return summary_response
