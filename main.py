@@ -85,6 +85,7 @@ def main():
             message_placeholder = st.empty()
             full_response = ""
 
+
         # Check if the PDF content exists
         if len(st.session_state['pdf_embeddings']) != 0:
             # Get the last PDF content for querying
