@@ -52,17 +52,7 @@ def main():
         st.session_state['uploaded_filename'] = None
 
     uploaded_pdf = st.sidebar.file_uploader("Upload your PDF document", type="pdf")
-    # if uploaded_pdf is not None:
-    #     # Extract text from the uploaded PDF
-    #     text = extract_text_by_page(uploaded_pdf)
-    #     # pdf_chunks = chunk_text(text)
-        
-    #     # Store embeddings in session state
-    #     if 'pdf_embeddings' not in st.session_state:
-    #         st.session_state['pdf_embeddings'] = []
-    #     st.session_state['pdf_embeddings'].append(text)
-    # else:
-    #     st.session_state['pdf_embeddings'] = []
+    
     if uploaded_pdf is not None:
         if st.session_state['uploaded_filename'] != uploaded_pdf.name:
             with st.spinner("Processing uploaded Document ..."):
@@ -73,9 +63,6 @@ def main():
     else:
         st.session_state['pdf_text'] = []
 
-
-    # Initialize Milvus and load collection
-    #collection = initialize_milvus()
 
     # Initialize session state for chat history
     if "messages" not in st.session_state:
@@ -95,7 +82,7 @@ def main():
 
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
-            full_response = ""
+            message_placeholder.markdown("Scanning through Doc 🔎📄...")
 
 
         # Check if the PDF content exists
