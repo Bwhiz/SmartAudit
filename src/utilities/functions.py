@@ -117,6 +117,17 @@ def extract_text_by_page(pdf_path):
     progress_bar.progress(1.0)  # Set to 100% after extraction is complete
     return text_by_page
 
+def extract_textfile_into_pages(uploaded_file, lines_per_page=30):
+    
+    text_content = uploaded_file.read().decode("utf-8")
+    lines = text_content.splitlines()  # Split the text into lines
+    pages = []
+    for i in range(0, len(lines), lines_per_page):
+        page_content = "\n".join(lines[i:i + lines_per_page])  
+        pages.append(page_content)
+    return pages
+
+
 def query_pdf_GPT_batch(pdf_content, question):
     USER_PROMPT = f"""
     Use the following pieces of information enclosed in <context> tags to provide an answer to the question enclosed in <question> tags.

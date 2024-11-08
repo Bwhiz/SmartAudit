@@ -1,6 +1,6 @@
 import streamlit as st
 from src.utilities import (query_pdf_GPT, stream_response,  calculate_token_usage, extract_text_by_page, 
-                           get_responses_concurrently, summarize_responses, show_modal)
+                           get_responses_concurrently, summarize_responses, show_modal, extract_textfile_into_pages)
 
 from prometheus_client import CollectorRegistry, Counter, Summary, start_http_server
 
@@ -51,13 +51,17 @@ def main():
     if 'uploaded_filename' not in st.session_state:
         st.session_state['uploaded_filename'] = None
 
-    uploaded_pdf = st.sidebar.file_uploader("Upload your PDF document", type="pdf")
+    uploaded_pdf = st.sidebar.file_uploader("Upload your PDF document", type=["pdf","txt"])
     
     if uploaded_pdf is not None:
         if st.session_state['uploaded_filename'] != uploaded_pdf.name:
             with st.spinner("Processing uploaded Document ..."):
                 # Extract text and save to session state
-                st.session_state['pdf_text'] = extract_text_by_page(uploaded_pdf)
+                if uploaded_pdf.type == "application/pdf":
+                    st.session_state['pdf_text'] = extract_text_by_page(uploaded_pdf)
+                else:
+                    st.session_state['pdf_text'] = extract_textfile_into_pages(uploaded_pdf)
+
                 st.session_state['uploaded_filename'] = uploaded_pdf.name
                 #st.session_state['pdf_embeddings'] = st.session_state['pdf_text']
     else:
@@ -88,7 +92,7 @@ def main():
         # Check if the PDF content exists
         if len(st.session_state['pdf_text']) != 0:
             # Get the last PDF content for querying
-            pdf_content = st.session_state['pdf_text']     
+            pdf_content = st.session_state['pdf_text']    
         else:
             pdf_content = ""
 
