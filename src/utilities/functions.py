@@ -55,7 +55,6 @@ def extract_text_with_pypdf(file):
         text += page.extract_text()
     return text
 
-
 def query_pdf_GPT(pdf_content, question, type='openai'):
 
     SYSTEM_PROMPT = """
