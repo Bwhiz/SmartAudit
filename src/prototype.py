@@ -10,6 +10,7 @@ st.set_page_config(
 )
 
 
+
 def main():
     st.markdown("<h1 style='text-align: center;'>SmartAudit</h1>", unsafe_allow_html=True)
 
