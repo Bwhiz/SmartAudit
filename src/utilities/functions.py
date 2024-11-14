@@ -3,13 +3,14 @@ import streamlit as st
 from PyPDF2 import PdfReader
 from dotenv import load_dotenv
 import os
-from openai import OpenAI
+from openai import OpenAI, AzureOpenAI
 import numpy as np
 import time
 from tqdm.auto import tqdm
 import tiktoken
 import concurrent.futures
 import streamlit as st
+import requests
 
 # from langchain.text_splitter import RecursiveCharacterTextSplitter
 # import faiss
@@ -19,10 +20,20 @@ import streamlit as st
 
 load_dotenv()
 API_KEY=os.getenv('OPEN_API_KEY')
+azure_openai_key=os.getenv('AZURE_OPENAI_API_KEY')
+azure_openai_endpoint=os.getenv('AZURE_OPENAI_ENDPOINT')
 # zilli_api_key=os.getenv('zilliAPI_KEY')
 # zilliuri = os.getenv('connectionUri')
 
 client = OpenAI(api_key=API_KEY)
+
+##########################################
+# --------- AZURE OPENAI SETUP -----------
+azure_client = AzureOpenAI(
+    api_key=azure_openai_key,  
+    api_version='2024-08-01-preview',
+    azure_endpoint=azure_openai_endpoint
+)
 
 
 SYSTEM_PROMPT = """
@@ -45,7 +56,7 @@ def extract_text_with_pypdf(file):
     return text
 
 
-def query_pdf_GPT(pdf_content, question):
+def query_pdf_GPT(pdf_content, question, type='openai'):
 
     SYSTEM_PROMPT = """
     Human: You are a Financial assistant called SmartAudit knowledgeable with the IFRS and GAAP standard for auditing reports.
@@ -61,7 +72,19 @@ def query_pdf_GPT(pdf_content, question):
     {question}
     </question>
     """
-    response = client.chat.completions.create(
+    if type == 'openai':
+        response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": USER_PROMPT},
+        ],
+        max_tokens=6000,
+        temperature=0.5,
+        stream=True
+        )
+    else:
+        response = azure_client.chat.completions.create(
     model="gpt-4o-mini",
     messages=[
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -128,7 +151,7 @@ def extract_textfile_into_pages(uploaded_file, lines_per_page=30):
     return pages
 
 
-def query_pdf_GPT_batch(pdf_content, question):
+def query_pdf_GPT_batch(pdf_content, question, type='openai'):
     USER_PROMPT = f"""
     Use the following pieces of information enclosed in <context> tags to provide an answer to the question enclosed in <question> tags.
     <context>
@@ -138,15 +161,26 @@ def query_pdf_GPT_batch(pdf_content, question):
     {question}
     </question>
     """
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": USER_PROMPT},
-        ],
-        max_tokens=6000,
-        temperature=0.5,
-    )
+    if type == 'openai':
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": USER_PROMPT},
+            ],
+            max_tokens=6000,
+            temperature=0.5,
+        )
+    else:
+        response = azure_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": USER_PROMPT},
+            ],
+            max_tokens=6000,
+            temperature=0.5,
+        )
     return response.choices[0].message.content if response.choices else ""
 
 def get_responses_concurrently(pdf_pages, question):
@@ -156,7 +190,7 @@ def get_responses_concurrently(pdf_pages, question):
     return responses
 
 
-def summarize_responses(responses, question):
+def summarize_responses(responses, question, type='openai'):
     combined_content = "\n".join(responses)
     summary_prompt = f"""
     Please provide a concise summary based on the following information extracted from multiple pages, focusing on key auditing-related insights relevant to IFRS and GAAP standards.
@@ -168,7 +202,19 @@ def summarize_responses(responses, question):
     {question}
     </question>
     """
-    summary_response = client.chat.completions.create(
+    if type == 'openai':
+        summary_response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": summary_prompt},
+            ],
+            max_tokens=6000,
+            temperature=0.5,
+            stream=True
+        )
+    else:
+        summary_response = azure_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},

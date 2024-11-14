@@ -1,4 +1,6 @@
 import streamlit as st
+import os
+from dotenv import load_dotenv
 from src.utilities import (query_pdf_GPT, stream_response,  calculate_token_usage, extract_text_by_page, 
                            get_responses_concurrently, summarize_responses, show_modal, extract_textfile_into_pages)
 
@@ -8,6 +10,10 @@ st.set_page_config(
     page_title="SmartAudit",
     page_icon="🗯"
 )
+
+load_dotenv()
+
+type = os.getenv('openai_type')
 
 # try:
 #     if "registry" not in st.session_state:
@@ -99,9 +105,9 @@ def main():
         if pdf_content != "" :
             response_generator = get_responses_concurrently(pdf_content, prompt)
 
-            final_summary = summarize_responses(response_generator, prompt)
+            final_summary = summarize_responses(response_generator, prompt, type=type)
         else:
-            final_summary = query_pdf_GPT(pdf_content, prompt)
+            final_summary = query_pdf_GPT(pdf_content, prompt, type=type)
 
         full_response = ""
         for token in stream_response(final_summary):
