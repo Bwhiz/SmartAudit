@@ -1,7 +1,7 @@
 <h1 align="center">SmartAudit Solution</h1>
 
 ## Simple schematic Representation of the SmartAudit workflow
-![Schematic](https://github.com/Bwhiz/SmartAudit/blob/main/assets/SmartAudit_schema.jpg)
+![Schematic](https://github.com/Bwhiz/SmartAudit/blob/main/assets/Smart-Audit-Schematic.jpg)
 
 
 ## Prerequisites
