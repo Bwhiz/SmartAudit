@@ -17,7 +17,7 @@ Before running this project, ensure you have the following installed:
 
    ```bash
    git clone https://github.com/Bwhiz/SmartAudit.git
-   cd your-repo
+   cd SmartAudit
    ```
 2. Create a virtual environment (recommended):
     ```bash
